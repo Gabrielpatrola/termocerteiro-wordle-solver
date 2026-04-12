@@ -9,7 +9,7 @@ import { CorrectLettersInput } from "@/components/features/CorrectLettersInput";
 import { TagInput } from "@/components/features/TagInput";
 import { PositionBlockList } from "@/components/features/PositionBlockList";
 import { fetchPalpites } from "@/services/solver";
-import type { PalpitesRequest, PalpitesResponse } from "@/types/solver";
+import type { GameType, PalpitesRequest, PalpitesResponse } from "@/types/solver";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -46,10 +46,11 @@ export type SolverFormValues = z.infer<typeof solverSchema>;
 // ---------------------------------------------------------------------------
 
 interface SolverFormProps {
+  game: GameType;
   onResults: (data: PalpitesResponse) => void;
 }
 
-export function SolverForm({ onResults }: SolverFormProps): React.JSX.Element {
+export function SolverForm({ game, onResults }: SolverFormProps): React.JSX.Element {
   const {
     control,
     handleSubmit,
@@ -79,6 +80,7 @@ export function SolverForm({ onResults }: SolverFormProps): React.JSX.Element {
     }
 
     mutation.mutate({
+      game,
       letras_corretas: values.letras_corretas,
       letras_existentes: values.letras_existentes,
       letras_nao_existentes: values.letras_nao_existentes,

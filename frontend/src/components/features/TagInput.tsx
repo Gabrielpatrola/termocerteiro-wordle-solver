@@ -1,4 +1,4 @@
-import React, { useState, useRef, type KeyboardEvent } from "react";
+import React, { useRef, type KeyboardEvent } from "react";
 import { cn } from "@/utils/cn";
 
 interface TagInputProps {
@@ -22,29 +22,27 @@ export function TagInput({
   tagColor = "yellow",
   error,
 }: TagInputProps): React.JSX.Element {
-  const [inputVal, setInputVal] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  function addTag(raw: string): void {
-    const letter = raw.trim().toLowerCase();
-    if (letter.length === 1 && /^[a-z]$/.test(letter) && !value.includes(letter)) {
-      onChange([...value, letter]);
-    }
-    setInputVal("");
-  }
-
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>): void {
-    if (e.key === "Enter" || e.key === " ") {
+    if (e.key === "Backspace" && value.length > 0) {
       e.preventDefault();
-      addTag(inputVal);
-    }
-    if (e.key === "Backspace" && inputVal === "" && value.length > 0) {
       onChange(value.slice(0, -1));
     }
   }
 
+  function handleChange(raw: string): void {
+    const letter = raw.trim().toLowerCase();
+    if (letter.length === 1 && /^[a-z]$/.test(letter) && !value.includes(letter)) {
+      onChange([...value, letter]);
+    }
+    // Always clear the input — the chip is the visual representation
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
   function removeTag(letter: string): void {
     onChange(value.filter((l) => l !== letter));
+    inputRef.current?.focus();
   }
 
   return (
@@ -83,18 +81,16 @@ export function TagInput({
         <input
           ref={inputRef}
           type="text"
-          value={inputVal}
           maxLength={1}
-          onChange={(e) => setInputVal(e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          onBlur={() => { if (inputVal) addTag(inputVal); }}
           className="h-6 w-8 min-w-[2rem] flex-1 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100"
-          placeholder={value.length === 0 ? "a, b…" : ""}
+          placeholder={value.length === 0 ? "a b c…" : ""}
           aria-label={label}
         />
       </div>
       <p className="text-xs text-zinc-400">
-        Digite uma letra e pressione Enter ou Espaço
+        Digite letras — Backspace para remover a última
       </p>
       {error && <span className="text-xs text-red-500">{error}</span>}
     </div>
