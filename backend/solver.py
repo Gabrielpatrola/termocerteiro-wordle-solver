@@ -335,7 +335,7 @@ def obter_palpites(
     )
 
     if not palavras_filtradas:
-        return []
+        return [], 0
 
     freq_letras = calcular_frequencia_letras(palavras_filtradas)
     freq_posicional = calcular_frequencia_posicional(palavras_filtradas)

@@ -41,7 +41,7 @@ export function CorrectLettersInput({
       <div className="flex gap-2">
         {value.map((letter, i) => (
           <div key={i} className="flex flex-col items-center gap-1">
-            <span className="text-xs text-zinc-400">{i}</span>
+            <span className="text-xs text-zinc-400">{i + 1}</span>
             <input
               ref={(el) => { refs.current[i] = el; }}
               type="text"
@@ -58,7 +58,7 @@ export function CorrectLettersInput({
                   : "border-zinc-300 bg-white text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100",
                 error && "border-red-400"
               )}
-              aria-label={`Letra correta na posição ${i}`}
+              aria-label={`Letra correta na posição ${i + 1}`}
             />
           </div>
         ))}

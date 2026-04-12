@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { SolverForm } from "@/components/features/SolverForm";
 import { ResultsList } from "@/components/features/ResultsList";
 import { BestFirstWord } from "@/components/features/BestFirstWord";
@@ -8,6 +8,13 @@ import type { GameType, PalpitesResponse } from "@/types/solver";
 export function Home(): React.JSX.Element {
   const [game, setGame] = useState<GameType>("termoo");
   const [results, setResults] = useState<PalpitesResponse | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (results !== null) {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [results]);
 
   function handleGameChange(newGame: GameType): void {
     setGame(newGame);
@@ -42,7 +49,7 @@ export function Home(): React.JSX.Element {
 
         {/* Results */}
         {results !== null && (
-          <div className="mt-6">
+          <div ref={resultsRef} className="mt-6">
             <ResultsList
               palpites={results.palpites}
               total={results.total_palavras_restantes}

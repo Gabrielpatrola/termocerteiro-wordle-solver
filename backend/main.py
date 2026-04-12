@@ -88,8 +88,8 @@ class PalpitesRequest(BaseModel):
                 raise ValueError(f"Position key '{key}' must be an integer string.")
             if pos < 0 or pos > 4:
                 raise ValueError(f"Position {pos} is out of range. Must be between 0 and 4.")
-            if len(letra) != 1 or not letra.isalpha():
-                raise ValueError(f"Invalid letter: '{letra}'. Must be a single alphabetic character.")
+            if not letra or not letra.isalpha():
+                raise ValueError(f"Invalid value: '{letra}'. Must be one or more alphabetic characters.")
         return {k: v_letra.lower() for k, v_letra in v.items()}
 
 

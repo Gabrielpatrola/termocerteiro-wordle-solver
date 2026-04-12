@@ -7,7 +7,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/Button";
 import { CorrectLettersInput } from "@/components/features/CorrectLettersInput";
 import { TagInput } from "@/components/features/TagInput";
-import { PositionBlockList } from "@/components/features/PositionBlockList";
+import { WrongPositionInput, type FourAttempts } from "@/components/features/WrongPositionInput";
 import { fetchPalpites } from "@/services/solver";
 import type { GameType, PalpitesRequest, PalpitesResponse } from "@/types/solver";
 
@@ -28,14 +28,13 @@ export const solverSchema = z.object({
     letraSchema,
     letraSchema,
   ]),
-  letras_existentes: z.array(z.string().length(1).regex(/^[a-z]$/)),
   letras_nao_existentes: z.array(z.string().length(1).regex(/^[a-z]$/)),
-  letras_nao_existentes_na_posicao: z.array(
-    z.object({
-      posicao: z.number().min(0).max(4),
-      letra: z.string().length(1).regex(/^[a-z]$/, "Deve ser uma letra"),
-    })
-  ),
+  letras_nao_existentes_na_posicao: z.tuple([
+    z.tuple([letraSchema, letraSchema, letraSchema, letraSchema, letraSchema]),
+    z.tuple([letraSchema, letraSchema, letraSchema, letraSchema, letraSchema]),
+    z.tuple([letraSchema, letraSchema, letraSchema, letraSchema, letraSchema]),
+    z.tuple([letraSchema, letraSchema, letraSchema, letraSchema, letraSchema]),
+  ]),
   n_palpites: z.number().min(1).max(50),
 });
 
@@ -59,9 +58,13 @@ export function SolverForm({ game, onResults }: SolverFormProps): React.JSX.Elem
     resolver: zodResolver(solverSchema),
     defaultValues: {
       letras_corretas: ["", "", "", "", ""],
-      letras_existentes: [],
       letras_nao_existentes: [],
-      letras_nao_existentes_na_posicao: [],
+      letras_nao_existentes_na_posicao: [
+        ["", "", "", "", ""],
+        ["", "", "", "", ""],
+        ["", "", "", "", ""],
+        ["", "", "", "", ""],
+      ],
       n_palpites: 10,
     },
   });
@@ -72,17 +75,30 @@ export function SolverForm({ game, onResults }: SolverFormProps): React.JSX.Elem
   });
 
   function onSubmit(values: SolverFormValues): void {
+    // Flatten 4×5 grid to Record<position, letters>, skipping empty cells and deduplicating
     const posicoes: Record<string, string> = {};
-    for (const { posicao, letra } of values.letras_nao_existentes_na_posicao) {
-      if (letra) {
-        posicoes[String(posicao)] = letra;
-      }
-    }
+    (values.letras_nao_existentes_na_posicao as FourAttempts).forEach((row) => {
+      row.forEach((letter, col) => {
+        if (letter) {
+          const existing = posicoes[String(col)] ?? "";
+          if (!existing.includes(letter)) posicoes[String(col)] = existing + letter;
+        }
+      });
+    });
+
+    // Derive letras_existentes from the grid: every letter entered is known to exist in the word
+    const letras_existentes = [
+      ...new Set(
+        (values.letras_nao_existentes_na_posicao as FourAttempts)
+          .flat()
+          .filter(Boolean)
+      ),
+    ];
 
     mutation.mutate({
       game,
       letras_corretas: values.letras_corretas,
-      letras_existentes: values.letras_existentes,
+      letras_existentes,
       letras_nao_existentes: values.letras_nao_existentes,
       letras_nao_existentes_na_posicao: posicoes,
       n_palpites: values.n_palpites,
@@ -108,17 +124,15 @@ export function SolverForm({ game, onResults }: SolverFormProps): React.JSX.Elem
         )}
       />
 
-      {/* Letras existentes (posição errada) */}
+      {/* Letras em posições erradas */}
       <Controller
         control={control}
-        name="letras_existentes"
+        name="letras_nao_existentes_na_posicao"
         render={({ field }) => (
-          <TagInput
-            label="Letras existentes (posição errada)"
+          <WrongPositionInput
             value={field.value}
             onChange={field.onChange}
-            tagColor="yellow"
-            error={errors.letras_existentes?.message}
+            error={errors.letras_nao_existentes_na_posicao?.message}
           />
         )}
       />
@@ -137,9 +151,6 @@ export function SolverForm({ game, onResults }: SolverFormProps): React.JSX.Elem
           />
         )}
       />
-
-      {/* Posições bloqueadas */}
-      <PositionBlockList control={control} />
 
       {/* Error feedback */}
       {mutation.isError && (
