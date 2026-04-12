@@ -9,6 +9,8 @@ import { CorrectLettersInput } from "@/components/features/CorrectLettersInput";
 import { TagInput } from "@/components/features/TagInput";
 import { WrongPositionInput, type FourAttempts } from "@/components/features/WrongPositionInput";
 import { fetchPalpites } from "@/services/solver";
+import { getCopy } from "@/utils/copy";
+import type { Language } from "@/types/i18n";
 import type { GameType, PalpitesRequest, PalpitesResponse } from "@/types/solver";
 
 // ---------------------------------------------------------------------------
@@ -46,10 +48,12 @@ export type SolverFormValues = z.infer<typeof solverSchema>;
 
 interface SolverFormProps {
   game: GameType;
+  language: Language;
   onResults: (data: PalpitesResponse) => void;
 }
 
-export function SolverForm({ game, onResults }: SolverFormProps): React.JSX.Element {
+export function SolverForm({ game, language, onResults }: SolverFormProps): React.JSX.Element {
+  const copy = getCopy(language);
   const {
     control,
     handleSubmit,
@@ -119,6 +123,8 @@ export function SolverForm({ game, onResults }: SolverFormProps): React.JSX.Elem
           <CorrectLettersInput
             value={field.value}
             onChange={field.onChange}
+            label={copy.solverForm.correctLettersLabel}
+            getAriaLabel={copy.solverForm.correctLetterAria}
             error={errors.letras_corretas?.message}
           />
         )}
@@ -132,6 +138,8 @@ export function SolverForm({ game, onResults }: SolverFormProps): React.JSX.Elem
           <WrongPositionInput
             value={field.value}
             onChange={field.onChange}
+            label={copy.solverForm.wrongPositionLabel}
+            getAriaLabel={copy.solverForm.wrongPositionAria}
             error={errors.letras_nao_existentes_na_posicao?.message}
           />
         )}
@@ -143,10 +151,13 @@ export function SolverForm({ game, onResults }: SolverFormProps): React.JSX.Elem
         name="letras_nao_existentes"
         render={({ field }) => (
           <TagInput
-            label="Letras erradas (não existem)"
+            label={copy.solverForm.wrongLettersLabel}
             value={field.value}
             onChange={field.onChange}
             tagColor="red"
+            placeholder={copy.solverForm.tagPlaceholder}
+            helperText={copy.solverForm.tagHelper}
+            getRemoveAriaLabel={copy.solverForm.removeLetterAria}
             error={errors.letras_nao_existentes?.message}
           />
         )}
@@ -164,7 +175,7 @@ export function SolverForm({ game, onResults }: SolverFormProps): React.JSX.Elem
         isLoading={mutation.isPending}
         className="w-full py-3 text-base"
       >
-        {mutation.isPending ? "Buscando palpites…" : "Buscar Palpites"}
+        {mutation.isPending ? copy.solverForm.submitLoading : copy.solverForm.submitIdle}
       </Button>
     </form>
   );

@@ -5,14 +5,18 @@ type FiveLetters = [string, string, string, string, string];
 export type FourAttempts = [FiveLetters, FiveLetters, FiveLetters, FiveLetters];
 
 interface WrongPositionInputProps {
+  label: string;
   value: FourAttempts;
   onChange: (value: FourAttempts) => void;
+  getAriaLabel: (attempt: number, position: number) => string;
   error?: string;
 }
 
 export function WrongPositionInput({
+  label,
   value,
   onChange,
+  getAriaLabel,
   error,
 }: WrongPositionInputProps): React.JSX.Element {
   const refs = useRef<Array<HTMLInputElement | null>>(Array(20).fill(null));
@@ -50,7 +54,7 @@ export function WrongPositionInput({
   return (
     <div className="flex flex-col gap-1">
       <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-        Letras em posições erradas (amarelas)
+        {label}
       </span>
 
       <div className="flex flex-col gap-1.5">
@@ -84,7 +88,7 @@ export function WrongPositionInput({
                     : "border-zinc-300 bg-white text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100",
                   error && "border-red-400"
                 )}
-                aria-label={`Tentativa ${ri + 1}, posição ${ci + 1}`}
+                aria-label={getAriaLabel(ri + 1, ci + 1)}
               />
             ))}
           </div>

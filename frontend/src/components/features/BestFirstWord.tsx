@@ -1,14 +1,17 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchPrimeiraPalavra } from "@/services/solver";
+import { getCopy } from "@/utils/copy";
 import { cn } from "@/utils/cn";
+import type { Language } from "@/types/i18n";
 import type { GameType } from "@/types/solver";
 
 interface BestFirstWordProps {
   game: GameType;
+  language: Language;
 }
 
-export function BestFirstWord({ game }: BestFirstWordProps): React.JSX.Element {
+export function BestFirstWord({ game, language }: BestFirstWordProps): React.JSX.Element {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["primeira-palavra", game],
     queryFn: () => fetchPrimeiraPalavra(game),
@@ -16,27 +19,18 @@ export function BestFirstWord({ game }: BestFirstWordProps): React.JSX.Element {
     retry: 3,
     retryDelay: 2000,
   });
-
-  const label = game === "termoo" ? "Melhor primeira palavra" : "Best first word";
-  const errorMsg =
-    game === "termoo"
-      ? "Não foi possível carregar. O backend ainda pode estar calculando."
-      : "Could not load. The backend may still be computing.";
-  const entropyLabel =
-    game === "termoo"
-      ? "— maximiza a informação obtida na primeira tentativa"
-      : "— maximizes information gained on first guess";
+  const copy = getCopy(language);
 
   return (
     <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-800 dark:bg-emerald-900/20">
       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-        {label}
+        {copy.bestFirstWord.label}
       </p>
 
-      {isLoading && <LoadingSkeleton />}
+      {isLoading && <LoadingSkeleton label={copy.bestFirstWord.loading} />}
 
       {isError && (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{errorMsg}</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">{copy.bestFirstWord.error}</p>
       )}
 
       {data && (
@@ -56,9 +50,9 @@ export function BestFirstWord({ game }: BestFirstWordProps): React.JSX.Element {
             ))}
           </div>
           <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-400">
-            Entropy:{" "}
+            {copy.bestFirstWord.entropyLabel}{" "}
             <span className="font-semibold">{data.entropia.toFixed(2)} bits</span>{" "}
-            {entropyLabel}
+            {copy.bestFirstWord.entropySuffix}
           </p>
         </>
       )}
@@ -66,7 +60,11 @@ export function BestFirstWord({ game }: BestFirstWordProps): React.JSX.Element {
   );
 }
 
-function LoadingSkeleton(): React.JSX.Element {
+interface LoadingSkeletonProps {
+  label: string;
+}
+
+function LoadingSkeleton({ label }: LoadingSkeletonProps): React.JSX.Element {
   return (
     <div className="flex items-center gap-3">
       <div className="flex gap-2">
@@ -78,7 +76,7 @@ function LoadingSkeleton(): React.JSX.Element {
         ))}
       </div>
       <span className="text-xs text-emerald-600 dark:text-emerald-500">
-        Calculando…
+        {label}
       </span>
     </div>
   );

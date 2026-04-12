@@ -6,6 +6,9 @@ interface TagInputProps {
   value: string[];
   onChange: (value: string[]) => void;
   tagColor?: "yellow" | "red";
+  placeholder?: string;
+  helperText?: string;
+  getRemoveAriaLabel?: (letter: string) => string;
   error?: string;
 }
 
@@ -20,6 +23,9 @@ export function TagInput({
   value,
   onChange,
   tagColor = "yellow",
+  placeholder = "a b c…",
+  helperText = "",
+  getRemoveAriaLabel = (letter) => `Remove letter ${letter}`,
   error,
 }: TagInputProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -72,7 +78,7 @@ export function TagInput({
               type="button"
               onClick={(e) => { e.stopPropagation(); removeTag(letter); }}
               className="ml-0.5 text-xs leading-none opacity-60 hover:opacity-100"
-              aria-label={`Remover letra ${letter}`}
+              aria-label={getRemoveAriaLabel(letter)}
             >
               ×
             </button>
@@ -85,13 +91,11 @@ export function TagInput({
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
           className="h-6 w-8 min-w-[2rem] flex-1 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100"
-          placeholder={value.length === 0 ? "a b c…" : ""}
+          placeholder={value.length === 0 ? placeholder : ""}
           aria-label={label}
         />
       </div>
-      <p className="text-xs text-zinc-400">
-        Digite letras — Backspace para remover a última
-      </p>
+      {helperText && <p className="text-xs text-zinc-400">{helperText}</p>}
       {error && <span className="text-xs text-red-500">{error}</span>}
     </div>
   );

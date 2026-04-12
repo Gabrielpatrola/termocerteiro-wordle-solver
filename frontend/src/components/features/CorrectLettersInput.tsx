@@ -4,14 +4,18 @@ import { cn } from "@/utils/cn";
 type FiveLetters = [string, string, string, string, string];
 
 interface CorrectLettersInputProps {
+  label: string;
   value: FiveLetters;
   onChange: (value: FiveLetters) => void;
+  getAriaLabel: (position: number) => string;
   error?: string;
 }
 
 export function CorrectLettersInput({
+  label,
   value,
   onChange,
+  getAriaLabel,
   error,
 }: CorrectLettersInputProps): React.JSX.Element {
   const refs = useRef<Array<HTMLInputElement | null>>([null, null, null, null, null]);
@@ -36,7 +40,7 @@ export function CorrectLettersInput({
   return (
     <div className="flex flex-col gap-1">
       <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-        Letras corretas (posição certa)
+        {label}
       </span>
       <div className="flex gap-2">
         {value.map((letter, i) => (
@@ -58,7 +62,7 @@ export function CorrectLettersInput({
                   : "border-zinc-300 bg-white text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100",
                 error && "border-red-400"
               )}
-              aria-label={`Letra correta na posição ${i + 1}`}
+              aria-label={getAriaLabel(i + 1)}
             />
           </div>
         ))}
