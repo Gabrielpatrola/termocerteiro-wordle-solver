@@ -29,6 +29,8 @@
   <span> · </span>
   <a href="#how-to-use">How to use</a>
   <span> · </span>
+  <a href="#docker">Docker</a>
+  <span> · </span>
   <a href="#testing">Testing</a>
   <span> · </span>
   <a href="#useful-links">Useful links</a>
@@ -216,6 +218,60 @@ VITE_API_URL=http://localhost:8000
 - The backend currently allows CORS from `http://localhost:5173` and `http://127.0.0.1:5173`.
 - Startup may take a bit longer on the first run because the API downloads both word lists and computes the best opening word for each game.
 - Since there is no database, restarting the backend clears every in-memory cache.
+
+## Docker
+
+If you only want to run the backend in a container, this repository now includes:
+
+- [`backend/Dockerfile`](/Users/patrola/Desktop/patrola/personal/patrola/termocerteiro-wordle-solver/backend/Dockerfile)
+- [`docker-compose.yml`](/Users/patrola/Desktop/patrola/personal/patrola/termocerteiro-wordle-solver/docker-compose.yml)
+
+### Run with Docker Compose
+
+From the repository root:
+
+```sh
+docker compose up --build -d
+```
+
+The API will be exposed on:
+
+```text
+http://localhost:8000
+```
+
+Useful commands:
+
+```sh
+docker compose logs -f backend
+docker compose restart backend
+docker compose down
+```
+
+### Run with plain Docker
+
+Build the image:
+
+```sh
+docker build -t termocerteiro-backend ./backend
+```
+
+Run the container:
+
+```sh
+docker run -d \
+  --name termocerteiro-backend \
+  -p 8000:8000 \
+  termocerteiro-backend
+```
+
+### VPS note
+
+If you run this on a VPS and want to access it directly from outside the server, make sure:
+
+- port `8000` is allowed in the VPS firewall or cloud firewall
+- the container has outbound internet access, because startup downloads the Termoo and Wordle word lists
+- if you prefer URLs without a visible port, place Nginx in front of the container and proxy a path such as `/api-termo/` to `http://127.0.0.1:8000/`
 
 ## Testing
 
