@@ -205,12 +205,12 @@ http://localhost:5173
 
 ### Frontend environment
 
-The frontend points to `http://localhost:8000` by default.
+The frontend points to `http://localhost:8000/api` by default.
 
 If your API runs somewhere else, create a `.env` file inside `frontend/` and set:
 
 ```sh
-VITE_API_URL=http://localhost:8000  
+VITE_API_URL=http://localhost:8000/api  
 ```
 
 ### Development notes
