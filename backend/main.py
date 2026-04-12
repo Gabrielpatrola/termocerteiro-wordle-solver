@@ -1,24 +1,40 @@
+import asyncio
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 
-from solver import carregar_palavras, obter_palpites
+from solver import carregar_palavras, calcular_melhor_primeira_palavra, obter_palpites
+import solver
 
 
 # ---------------------------------------------------------------------------
-# Lifespan: pre-load word list at startup
+# Lifespan: load both word lists and compute best first words concurrently
 # ---------------------------------------------------------------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    await carregar_palavras()
+    # Fetch both word lists in parallel
+    palavras_pt, palavras_en = await asyncio.gather(
+        carregar_palavras("termoo"),
+        carregar_palavras("wordle"),
+    )
+
+    # Compute best first word for each game in parallel thread executors
+    loop = asyncio.get_event_loop()
+    pt_result, en_result = await asyncio.gather(
+        loop.run_in_executor(None, calcular_melhor_primeira_palavra, palavras_pt),
+        loop.run_in_executor(None, calcular_melhor_primeira_palavra, palavras_en),
+    )
+
+    solver._PRIMEIRA_PALAVRA_CACHE["termoo"] = pt_result
+    solver._PRIMEIRA_PALAVRA_CACHE["wordle"] = en_result
     yield
 
 
-app = FastAPI(title="Termocerteiro API", lifespan=lifespan)
+app = FastAPI(title="Termocerteiro / Wordle Solver API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,6 +53,7 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 
 class PalpitesRequest(BaseModel):
+    game: Literal["termoo", "wordle"] = Field(default="termoo")
     letras_corretas: list[str] = Field(default=["", "", "", "", ""])
     letras_existentes: list[str] = Field(default=[])
     letras_nao_existentes: list[str] = Field(default=[])
@@ -86,21 +103,39 @@ class PalpitesResponse(BaseModel):
     total_palavras_restantes: int
 
 
+class PrimeiraPalavraResponse(BaseModel):
+    palavra: str
+    entropia: float  # Shannon entropy in bits — higher = more informative
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 
 @app.get("/health")
 async def health() -> dict[str, str]:
-    from solver import _PALAVRAS_CACHE
-    if _PALAVRAS_CACHE is None:
-        raise HTTPException(status_code=503, detail="Word list not loaded yet")
-    return {"status": "ok", "palavras_carregadas": str(len(_PALAVRAS_CACHE))}
+    counts = {
+        game: str(len(words))
+        for game, words in solver._PALAVRAS_CACHE.items()
+    }
+    if not counts:
+        raise HTTPException(status_code=503, detail="Word lists not loaded yet")
+    return {"status": "ok", **counts}
+
+
+@app.get("/api/primeira-palavra", response_model=PrimeiraPalavraResponse)
+async def get_primeira_palavra(
+    game: Literal["termoo", "wordle"] = "termoo",
+) -> PrimeiraPalavraResponse:
+    if game not in solver._PRIMEIRA_PALAVRA_CACHE:
+        raise HTTPException(status_code=503, detail=f"Still computing best first word for '{game}'")
+    palavra, entropia = solver._PRIMEIRA_PALAVRA_CACHE[game]
+    return PrimeiraPalavraResponse(palavra=palavra, entropia=entropia)
 
 
 @app.post("/api/palpites", response_model=PalpitesResponse)
 async def get_palpites(body: PalpitesRequest) -> PalpitesResponse:
-    palavras = await carregar_palavras()
+    palavras = await carregar_palavras(body.game)
 
     posicoes: dict[int, str] = {
         int(k): v for k, v in body.letras_nao_existentes_na_posicao.items()

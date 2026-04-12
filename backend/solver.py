@@ -1,29 +1,47 @@
 import httpx
 import pandas as pd
 from collections import Counter
+from typing import Literal
 
-WORDS_URL = "https://www.ime.usp.br/~pf/dicios/br-sem-acentos.txt"
+GameType = Literal["termoo", "wordle"]
 
-_PALAVRAS_CACHE: list[str] | None = None
+GAME_CONFIG: dict[str, str] = {
+    "termoo": "https://www.ime.usp.br/~pf/dicios/br-sem-acentos.txt",
+    "wordle": "https://www-cs-faculty.stanford.edu/~knuth/sgb-words.txt",
+}
+
+_PALAVRAS_CACHE: dict[str, list[str]] = {}
+_PRIMEIRA_PALAVRA_CACHE: dict[str, tuple[str, float]] = {}
 
 
-async def carregar_palavras() -> list[str]:
-    global _PALAVRAS_CACHE
-    if _PALAVRAS_CACHE is not None:
-        return _PALAVRAS_CACHE
+async def carregar_palavras(game: GameType = "termoo") -> list[str]:
+    if game in _PALAVRAS_CACHE:
+        return _PALAVRAS_CACHE[game]
 
+    url = GAME_CONFIG[game]
     async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.get(WORDS_URL)
+        response = await client.get(url)
         response.raise_for_status()
 
     lines = response.text.splitlines()
-    palavras = [
-        line.strip().lower()
-        for line in lines
-        if line.strip() and len(line.strip()) == 5
-    ]
-    _PALAVRAS_CACHE = palavras
-    return _PALAVRAS_CACHE
+
+    if game == "termoo":
+        # USP list contains words of all lengths — keep only 5-letter words
+        palavras = [
+            line.strip().lower()
+            for line in lines
+            if line.strip() and len(line.strip()) == 5 and line.strip().isalpha()
+        ]
+    else:
+        # Knuth list is already exactly 5-letter lowercase words
+        palavras = [
+            line.strip().lower()
+            for line in lines
+            if line.strip() and line.strip().isalpha()
+        ]
+
+    _PALAVRAS_CACHE[game] = palavras
+    return palavras
 
 
 def filtrar_palavras(
@@ -217,6 +235,86 @@ def pontuar_palavra(
     )
 
     return round(score_final, 2)
+
+
+def calcular_padrao(guess: str, answer: str) -> tuple[int, ...]:
+    """
+    Computes the Wordle color pattern for a guess against an answer.
+    Returns a tuple of 5 ints: 2=green, 1=yellow, 0=gray.
+    Handles duplicate letters correctly (Wordle rules).
+    """
+    pattern = [0] * 5
+    answer_remaining = list(answer)
+
+    # Pass 1: greens
+    for i in range(5):
+        if guess[i] == answer[i]:
+            pattern[i] = 2
+            answer_remaining[i] = None  # type: ignore[call-overload]
+
+    # Pass 2: yellows
+    for i in range(5):
+        if pattern[i] == 2:
+            continue
+        if guess[i] in answer_remaining:
+            pattern[i] = 1
+            answer_remaining[answer_remaining.index(guess[i])] = None  # type: ignore[call-overload]
+
+    return tuple(pattern)
+
+
+def calcular_entropia(guess: str, palavras: list[str]) -> float:
+    """
+    Computes the Shannon entropy (bits) of a guess over the current word list.
+
+    H = Σ p_i × log₂(1/p_i)   where p_i = group_size / total
+
+    Higher entropy = more information gained on average = better guess.
+    """
+    import math
+
+    grupos: dict[tuple[int, ...], int] = {}
+    for answer in palavras:
+        padrao = calcular_padrao(guess, answer)
+        grupos[padrao] = grupos.get(padrao, 0) + 1
+
+    total = len(palavras)
+    return sum(
+        (c / total) * math.log2(total / c) for c in grupos.values()
+    )
+
+
+def calcular_melhor_primeira_palavra(palavras: list[str]) -> tuple[str, float]:
+    """
+    Finds the best opening word by maximizing Shannon entropy over the full
+    word list. No pre-filter — guarantees the true optimum.
+
+    Returns (best_word, its_entropia_in_bits).
+    """
+    import time
+
+    total = len(palavras)
+    print(f"[solver] Calculando melhor primeira palavra em {total} palavras...", flush=True)
+    t0 = time.perf_counter()
+
+    melhor_palavra = palavras[0]
+    melhor_entropia = -1.0
+
+    for guess in palavras:
+        entropia = calcular_entropia(guess, palavras)
+        if entropia > melhor_entropia:
+            melhor_entropia = entropia
+            melhor_palavra = guess
+
+    elapsed = time.perf_counter() - t0
+    print(
+        f"[solver] Melhor primeira palavra: '{melhor_palavra}'"
+        f" (entropia: {melhor_entropia:.3f} bits)"
+        f" — calculado em {elapsed:.1f}s",
+        flush=True,
+    )
+
+    return melhor_palavra, round(melhor_entropia, 3)
 
 
 def obter_palpites(
