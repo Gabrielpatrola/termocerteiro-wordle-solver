@@ -17,24 +17,30 @@
 backend/
 ├── main.py                # FastAPI app, lifespan, models, and routes
 ├── requirements.txt       # Python dependencies
-└── solver.py              # Word loading, caching, filtering, scoring, entropy
+├── solver.py              # Word loading, caching, filtering, scoring, entropy
+├── tests/                 # pytest suites and shared backend test helpers
+├── requirements-dev.txt   # Python test dependencies
+└── Dockerfile             # Dockerfile for the backend
 
 frontend/
-├── public/                # Static assets
+├── public/                # Static assets and public files
 ├── src/
-│   ├── assets/            # Images and app assets
+│   ├── assets/            # Static assets and images
 │   ├── components/
-│   │   ├── features/      # Solver-specific UI
+│   │   ├── features/      # Solver-specific UI components
 │   │   └── ui/            # Reusable UI primitives
-│   ├── pages/             # Page-level composition
-│   ├── services/          # API calls to the backend
-│   ├── types/             # Frontend request/response contracts
-│   ├── utils/             # Small pure helpers
-│   ├── App.tsx            # Query client provider
-│   └── main.tsx           # React entry point
-├── package.json
-├── tsconfig.app.json
-└── vite.config.ts
+│   ├── pages/             # React page components
+│   ├── services/          # Frontend API calls to the backend
+│   ├── types/             # Frontend request/response contracts and type definitions
+│   ├── utils/             # Small pure helpers and utilities
+│   ├── App.tsx            # React app root component
+│   └── main.tsx           # React app entry point
+├── tests/                 # Vitest suites and shared frontend test helpers
+├── package.json           # Node.js dependencies
+├── tsconfig.app.json      # TypeScript configuration for the frontend
+├── tsconfig.node.json     # TypeScript configuration for Vite
+├── vite.config.ts         # Vite configuration for the frontend
+└── vitest.config.ts       # Vitest configuration for the frontend
 ```
 
 ## Architecture Rules
@@ -94,7 +100,11 @@ frontend/
 
 ## Testing
 
-- There is no committed automated test suite yet.
+- Backend automated tests live under `backend/tests/`.
+- Frontend automated tests live under `frontend/tests/`.
 - For backend additions, prefer `pytest` and start with unit tests around `filtrar_palavras`, `calcular_padrao`, and `obter_palpites`.
-- For frontend additions, prefer Vitest + React Testing Library and test behavior at the component boundary.
+- Run backend tests from `backend/` with `python3 -m pytest tests`.
+- For frontend additions, prefer Vitest + React Testing Library and keep test files under `frontend/tests/`, grouped by app area such as `components/`, `pages/`, and `services/`.
+- Shared frontend test helpers and setup should also live under `frontend/tests/`, not mixed into `frontend/src/`.
+- Run frontend tests from `frontend/` with `yarn test` or `npm test`.
 - At minimum, run a frontend production build and smoke-test the backend endpoints after meaningful changes.
