@@ -275,17 +275,16 @@ If you run this on a VPS and want to access it directly from outside the server,
 
 ## Testing
 
-There is currently no automated test suite committed to this repository.
-
-Useful smoke checks:
-
+There is an automated test suite committed to this repository.
+to run the tests, use the following commands:
 ```sh
-cd frontend
-npm run build
+cd backend
+python3 -m pytest tests
 ```
 
 ```sh
-curl http://localhost:8000/health
+cd frontend
+npm run test
 ```
 
 Recommended future coverage:
@@ -298,9 +297,16 @@ Recommended future coverage:
 
 ```text
 backend/
+├── tests/
+│   ├── conftest.py
+│   ├── test_api.py
+│   └── test_solver.py
+├── Dockerfile
 ├── main.py
+├── requirements-dev.txt
 ├── requirements.txt
 └── solver.py
+
 
 frontend/
 ├── public/
@@ -315,10 +321,20 @@ frontend/
 │   ├── utils/
 │   ├── App.tsx
 │   └── main.tsx
+├── tests/
+│   ├── components/
+│   │   └── features/
+│   ├── services/
+│   ├── setup.ts
+│   └── testUtils.tsx
 ├── index.html
+├── eslint.config.js
 ├── package.json
 ├── tsconfig.app.json
-└── vite.config.ts
+├── tsconfig.json
+├── tsconfig.node.json
+├── vite.config.ts
+└── vitest.config.ts
 ```
 
 ## Useful links
