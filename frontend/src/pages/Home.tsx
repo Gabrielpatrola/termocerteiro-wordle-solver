@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { SolverForm } from "@/components/features/SolverForm";
 import { ResultsList } from "@/components/features/ResultsList";
 import { BestFirstWord } from "@/components/features/BestFirstWord";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 import { GameSelector } from "@/components/ui/GameSelector";
 import { LanguageSelector } from "@/components/ui/LanguageSelector";
 import { getCopy } from "@/utils/copy";
@@ -38,9 +39,7 @@ export function Home(): React.JSX.Element {
 
         {/* Header */}
         <header className="mb-6 mt-4 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Termo<span className="text-emerald-500">Certeiro</span>
-          </h1>
+          <BrandLogo />
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             {copy.home.subtitle}
           </p>
