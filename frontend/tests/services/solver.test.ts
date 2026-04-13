@@ -88,4 +88,15 @@ describe("solver services", () => {
       "http://localhost:8000/api/primeira-palavra?game=wordle"
     );
   });
+
+  it("throws a detailed error for failed best-first-word responses", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response("still computing", { status: 503 }))
+    );
+
+    await expect(fetchPrimeiraPalavra("termoo")).rejects.toThrow(
+      "Erro da API (503): still computing"
+    );
+  });
 });

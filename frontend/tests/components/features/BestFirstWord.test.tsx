@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { BestFirstWord } from "@/components/features/BestFirstWord";
@@ -39,5 +39,22 @@ describe("BestFirstWord", () => {
 
     expect(await screen.findByText("5.43 bits")).toBeInTheDocument();
     expect(fetchPrimeiraPalavra).toHaveBeenCalledWith("wordle");
+  });
+
+  it("renders the error copy when the query fails", async () => {
+    vi.useFakeTimers();
+    vi.mocked(fetchPrimeiraPalavra).mockRejectedValue(new Error("boom"));
+
+    renderWithQueryClient(<BestFirstWord game="termoo" language="en" />);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(6_500);
+    });
+
+    vi.useRealTimers();
+
+    expect(
+      await screen.findByText("Could not load. The backend may still be computing.")
+    ).toBeInTheDocument();
   });
 });
