@@ -276,7 +276,8 @@ If you run this on a VPS and want to access it directly from outside the server,
 ## Testing
 
 There is an automated test suite committed to this repository.
-to run the tests, use the following commands:
+To run the tests, use the following commands:
+
 ```sh
 cd backend
 python3 -m pytest tests
@@ -284,14 +285,15 @@ python3 -m pytest tests
 
 ```sh
 cd frontend
-npm run test
+npm test
 ```
 
-Recommended future coverage:
+Current baseline coverage includes:
 
 - backend unit tests for `filtrar_palavras`, `calcular_padrao`, and `obter_palpites`
 - frontend component tests for form input behavior and result rendering
 - API integration tests for `/api/palpites` and `/api/primeira-palavra`
+
 
 ## Project structure
 
